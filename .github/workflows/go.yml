@@ -5,14 +5,16 @@ name: Integracao Continua
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v4
 
@@ -25,6 +27,15 @@ jobs:
       run: docker compose up -d postgres
 
     - name: Lint
-      run: docker run --rm -it -v $(shell pwd):/app -w /app golangci/golangci-lint golangci-lint run controllers/ database/ models/ routes/
+      uses: golangci/golangci-lint-action@v6
+      with:
+          version: v1.60
+          args: controllers/ database/ models/ routes/
+
     - name: Test
+      env:
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_PORT: ${{ secrets.DB_PORT }}
       run: go test -v main_test.go
